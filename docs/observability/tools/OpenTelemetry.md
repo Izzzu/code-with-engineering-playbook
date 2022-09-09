@@ -16,7 +16,7 @@ A detailed explanation of OpenTelemetry concepts is out of the scope of this rep
 
 However, understanding the core implementation patterns will help you know what approach better fits the scenario you are trying to solve. These are three main patterns as follows:
 
-* Automatic telemetry: Support for automatic instrumentation is available for some languages. For those available, OpenTelemetry automated instrumentation (100% codeless) is implemented by running the OpenTelemetry Agent. The agent would be deployed with your service and run as a separate process or in a sidecar. The agent reads a set of predefined environment variables used to configure its behavior and various exporter/collector settings. The agent will intercept all interactions and dependencies and automatically send the telemetry to the configured exporters.
+* Automatic telemetry: Support for automatic instrumentation is available for some languages. For those available, OpenTelemetry automated instrumentation (100% codeless) is implemented by running the [OpenTelemetry Agent](https://opentelemetry.io/docs/collector/deployment/). The agent reads a set of predefined environment variables used to configure its behavior and various exporter/collector settings. The agent will intercept all interactions and dependencies and automatically send the telemetry to the configured exporters.
 * Manual tracing: This must be done by coding using the OpenTelemetry SDK, managing the `tracer` objects to obtain Spans, and forming instrumented OpenTelemetry Scopes to identify the code segments to be manually traced. Also, by using the @WithSpan annotations (method decorations in C#) to mark whole methods that will be automatically traced.
 * Hybrid approach: Most Production-ready scenarios will require a mix of both techniques, using the OpenTelemetry Agent to collect automatic telemetry and the OpenTelemetry SDK to identify code segments that are important to instrument manually. When considering production-ready scenarios, the hybrid approach is the way to go as it allows for a throughout cover over the whole solution. It means it implements the OpenTelemetry Agent for automatic tracing, combined with the OpenTelemetry SDK for manual instrumentation. It provides automatic context propagation and events correlation out of the box.
 
@@ -114,6 +114,17 @@ Either way, instrumenting your code with OpenTelemetry seems the right approach 
 ## Advanced topics
 
 Use the [Azure OpenTelemetry Tracing plugin library for Java](https://github.com/Azure/azure-sdk-for-java/tree/main/sdk/core/azure-core-tracing-opentelemetry) to enable distributed tracing across Azure components through OpenTelemetry.
+
+### Manual trace context propagation
+
+The trace context is stored in Thread-local storage. When the application flow involves multiple threads (eg. multithreaded work-queue, asynchronous processing with threads handover) then the traces won't get combined into one end-to-end trace chain with automatic context propagation.
+To achieve that you need to manually [propagate the trace context](https://opentelemetry.io/docs/instrumentation/java/manual/#context-propagation) by storing the [trace headers](https://www.w3.org/TR/trace-context/#traceparent-header) along with the work-queue item.
+
+### Telemetry testing
+
+Mission critical telemetry data should be covered by testing. Testing the telemetry is possible when using OpenTelemetry Agent. For testing, the OpenTelemetry Agent should be configured to use [OTLP exporter](https://opentelemetry.io/docs/reference/specification/protocol/exporter/) and point the [OTLP exporter endpoint]((https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#otlp-exporter-span-metric-and-log-exporters)
+) to the collector web server. Using mocking servers libraries (eg. MockServer in Java) can help verify the telemetry data pushed to the collector.
+<!-- TBD: link to the Testing telemetry example in opentelemetry-java-docs repo   -->
 
 ## References
 
